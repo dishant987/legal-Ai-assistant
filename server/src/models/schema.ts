@@ -52,6 +52,12 @@ export const documents = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     contentHash: text('content_hash').notNull(),
+    /**
+     * The extracted text, kept ONLY when the user opted into storage.
+     * Findings quote spans of it, so without it a cached replay could show
+     * claims it cannot point at. Purged with the row at 24 hours.
+     */
+    text: text('text'),
     docType: text('doc_type'),
     jurisdictionState: text('jurisdiction_state'),
     pageCount: integer('page_count'),

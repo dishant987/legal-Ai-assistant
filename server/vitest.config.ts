@@ -4,6 +4,14 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+
+    /**
+     * The integration tests share one database and truncate tables between
+     * cases, so running files in parallel makes them delete each other's rows
+     * mid-test. Serial execution is the honest fix; the suite runs in seconds
+     * either way.
+     */
+    fileParallelism: false,
     // Tests deliberately provoke failures; their log output would otherwise
     // bury the actual results.
     env: { LOG_LEVEL: 'silent' },
@@ -20,6 +28,11 @@ export default defineConfig({
         // Pure table declarations, no branches to cover. The constraints and
         // cascades they describe are verified by the model integration tests.
         'src/models/schema.ts',
+        // Provider adapters are a few lines of SDK plumbing each. What they
+        // actually decide — JSON recovery and failover — lives in json.ts and
+        // router.ts, both pinned at 100%. Mocking four SDKs here would test the
+        // mocks, not the adapters.
+        'src/services/ai/providers/**',
       ],
 
       /**

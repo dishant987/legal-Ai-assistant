@@ -25,6 +25,8 @@ export const ERROR_CODES = [
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
+export const errorCodeSchema = z.enum(ERROR_CODES);
+
 /**
  * The single error envelope every non-2xx response uses (R4.2).
  *

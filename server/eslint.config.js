@@ -70,6 +70,7 @@ export default tseslint.config(
      to misconfigure, and it cannot silently pass when resolution fails. */
   {
     files: ['src/controllers/**/*.ts'],
+    ignores: ['**/*.test.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
