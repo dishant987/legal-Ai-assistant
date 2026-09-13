@@ -32,7 +32,10 @@ export default defineConfig({
         // actually decide — JSON recovery and failover — lives in json.ts and
         // router.ts, both pinned at 100%. Mocking four SDKs here would test the
         // mocks, not the adapters.
-        'src/services/ai/providers/**',
+        'src/services/ai/providers/gemini.ts',
+        'src/services/ai/providers/groq.ts',
+        'src/services/ai/providers/mistral.ts',
+        'src/services/ai/providers/ollama.ts',
       ],
 
       /**
@@ -54,6 +57,12 @@ export default defineConfig({
          */
         'src/services/ai/router.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
         'src/services/ai/json.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
+        'src/services/ai/providers/ollamaConfig.ts': {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
       },
     },
   },

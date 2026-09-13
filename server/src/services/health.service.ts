@@ -4,11 +4,36 @@ import * as healthModel from '../models/health.model.js';
 import * as providerEventModel from '../models/providerEvent.model.js';
 
 import { getRouter } from './ai/index.js';
+import { resolveOllama } from './ai/providers/ollamaConfig.js';
 
 export interface Readiness {
   ready: boolean;
   database: { target: string; reachable: boolean; latencyMs: number | null };
-  providers: { configured: string[]; count: number };
+  providers: { configured: string[]; count: number; ollama: OllamaStatus };
+}
+
+export interface OllamaStatus {
+  /** 'cloud' when OLLAMA_API_KEY is set, otherwise the local daemon. */
+  mode: 'local' | 'cloud';
+  model: string;
+}
+
+/**
+ * How Ollama is configured.
+ *
+ * Worth surfacing because the two modes are genuinely different answers: a
+ * small local model that may struggle on a long contract, versus a large hosted
+ * one. The UI tells the reader which served their document rather than letting
+ * a thin answer pass for a full one (R2.11).
+ */
+export function ollamaStatus(): OllamaStatus {
+  const env = getEnv();
+  const { mode, model } = resolveOllama({
+    OLLAMA_BASE_URL: env.OLLAMA_BASE_URL,
+    OLLAMA_API_KEY: env.OLLAMA_API_KEY,
+    OLLAMA_MODEL: env.OLLAMA_MODEL,
+  });
+  return { mode, model };
 }
 
 /**
@@ -53,7 +78,7 @@ export async function readiness(): Promise<Readiness> {
   return {
     ready: reachable,
     database: { target: getDbTarget(), reachable, latencyMs },
-    providers: { configured, count: configured.length },
+    providers: { configured, count: configured.length, ollama: ollamaStatus() },
   };
 }
 
@@ -64,11 +89,13 @@ export async function readiness(): Promise<Readiness> {
  */
 export async function providerHealth(): Promise<{
   configured: string[];
+  ollama: OllamaStatus;
   breakers: Record<string, { open: boolean; failures: number }>;
   recent: providerEventModel.ProviderHealth[];
 }> {
   return {
     configured: configuredProviders(),
+    ollama: ollamaStatus(),
     // Live circuit state, so the status strip can show a provider being skipped
     // rather than only reporting it after the fact.
     breakers: getRouter().snapshot(),

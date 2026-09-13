@@ -26,7 +26,13 @@ export function buildProviders(env = getEnv()): Provider[] {
   if (env.GEMINI_API_KEY !== undefined) providers.push(createGeminiProvider(env.GEMINI_API_KEY));
   if (env.GROQ_API_KEY !== undefined) providers.push(createGroqProvider(env.GROQ_API_KEY));
   if (env.MISTRAL_API_KEY !== undefined) providers.push(createMistralProvider(env.MISTRAL_API_KEY));
-  providers.push(createOllamaProvider(env.OLLAMA_BASE_URL));
+  providers.push(
+    createOllamaProvider({
+      OLLAMA_BASE_URL: env.OLLAMA_BASE_URL,
+      OLLAMA_API_KEY: env.OLLAMA_API_KEY,
+      OLLAMA_MODEL: env.OLLAMA_MODEL,
+    }),
+  );
 
   return providers;
 }

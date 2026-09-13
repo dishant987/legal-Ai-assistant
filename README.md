@@ -53,7 +53,7 @@ Every bullet above maps to a feature, a file, and a test.
 | **You / Market / Law**     | Each material clause is shown against market standard _and_ against the statutory floor — including clauses that are **void regardless of signature**.      |
 | **Jurisdiction honesty**   | A _model_ act is never cited as binding in a state that hasn't adopted it.                                                                                  |
 | **Reads a photograph**     | Stamp-paper agreements photographed on a phone go straight to the model. No OCR layer to break.                                                             |
-| **Four-provider failover** | Gemini → Groq → Mistral → Ollama, with a circuit breaker. Runs entirely offline on Ollama alone.                                                            |
+| **Four-provider failover** | Gemini → Groq → Mistral → Ollama, with a circuit breaker and token-budget routing. Ollama runs locally or against its hosted API, so the chain works with no keys at all. |
 
 ---
 
@@ -81,7 +81,9 @@ Only `VITE_`-prefixed variables reach the browser. **No key, secret or connectio
 ever belongs in `client/.env`** — everything there is compiled into the bundle and is
 readable by anyone who opens the page. All provider credentials stay server-side.
 
-**No API keys?** It still runs — install [Ollama](https://ollama.com), `ollama pull llama3.2`, and the chain falls through to local inference. Set `DEMO=true` to serve recorded fixtures with no model at all.
+**No API keys?** It still runs. Install [Ollama](https://ollama.com) and `ollama pull llama3.2`, and the chain falls through to local inference with no credentials anywhere.
+
+**Want Ollama without the laptop?** Set `OLLAMA_API_KEY` to a key from [ollama.com](https://ollama.com/settings/keys) and it switches to the hosted API automatically — a large model instead of whatever fits locally. `OLLAMA_MODEL` overrides the tag, because that catalogue changes faster than anything else here. `/api/v1/health/providers` reports which mode is live.
 
 **No Postgres?** Create a free [Neon](https://neon.tech) project and paste its connection string into `DATABASE_URL`. No code changes, no Docker.
 

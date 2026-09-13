@@ -51,6 +51,13 @@ const EnvSchema = z.object({
   GROQ_API_KEY: blankAsAbsent(z.string().min(1)),
   MISTRAL_API_KEY: blankAsAbsent(z.string().min(1)),
   OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
+  /**
+   * Set this and Ollama switches from the local daemon to the hosted API.
+   * Absent means local, which still needs no key at all.
+   */
+  OLLAMA_API_KEY: blankAsAbsent(z.string().min(1)),
+  /** Override the model tag. Ollama's catalogue churns; this saves a redeploy. */
+  OLLAMA_MODEL: blankAsAbsent(z.string().min(1)),
 
   // --- Storage: optional. Absent means in-memory only, which is a valid mode (R3.9) ---
   CLOUDINARY_CLOUD_NAME: blankAsAbsent(z.string().min(1)),
