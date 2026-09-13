@@ -31,7 +31,7 @@ function blankAsAbsent<T extends z.ZodType>(inner: T): z.ZodOptional<T> {
 const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3001),
-  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL: z.enum(['silent', 'fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   /** Local Postgres or Neon — the only thing that changes between them (R12.1). */
   DATABASE_URL: z.url(),

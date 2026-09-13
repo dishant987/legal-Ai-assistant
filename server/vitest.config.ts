@@ -4,6 +4,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    // Tests deliberately provoke failures; their log output would otherwise
+    // bury the actual results.
+    env: { LOG_LEVEL: 'silent' },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
