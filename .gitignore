@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+# Planning documents — internal, not part of the submission
+docs/
+
+# Sample documents may contain generated PDFs; the sources are tracked, output is not
+db/samples/*.generated.*
+
+playwright-report/
+test-results/
+.vite/
+.cache/
+
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*

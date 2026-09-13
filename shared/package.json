@@ -1,0 +1,13 @@
+{
+  "name": "@legal-assist/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Zod schemas, types, error codes and message catalogue shared by client and server.",
+  "exports": {
+    "./config": "./src/config/env.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.4"
+  }
+}

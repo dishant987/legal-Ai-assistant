@@ -1,0 +1,15 @@
+{
+  "name": "@legal-assist/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Express MVC API — analysis pipeline and four-provider AI router.",
+  "main": "src/server.ts",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@legal-assist/shared": "*"
+  }
+}
