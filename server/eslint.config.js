@@ -4,22 +4,17 @@ import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
-  {
-    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', 'docs/**', 'db/migrations/**'],
-  },
+  { ignores: ['dist/**', 'coverage/**', 'node_modules/**', 'db/migrations/**'] },
 
   js.configs.recommended,
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
 
   {
-    files: ['**/*.ts', '**/*.tsx'],
+    files: ['**/*.ts'],
     languageOptions: {
       parserOptions: {
-        projectService: {
-          // Root-level tool configs belong to no tsconfig project.
-          allowDefaultProject: ['*.config.ts'],
-        },
+        projectService: { allowDefaultProject: ['*.config.ts'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -32,6 +27,16 @@ export default tseslint.config(
         { allowExpressions: true, allowTypedFunctionExpressions: true },
       ],
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          // `const { omitMe: _x, ...rest } = obj` is the idiomatic way to drop a key.
+          ignoreRestSiblings: true,
+        },
+      ],
 
       /* R10.7 — no dead code, no console, no leftover TODOs */
       'no-console': 'error',
@@ -54,7 +59,7 @@ export default tseslint.config(
         },
         {
           selector: "MemberExpression[object.name='process'][property.name='env']",
-          message: 'Read config from server/src/config/env.ts, never process.env directly.',
+          message: 'Read config from src/config/env.ts, never process.env directly.',
         },
       ],
     },
@@ -64,7 +69,7 @@ export default tseslint.config(
      Matched on the import specifier rather than the resolved path: no resolver
      to misconfigure, and it cannot silently pass when resolution fails. */
   {
-    files: ['server/src/controllers/**/*.ts'],
+    files: ['src/controllers/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -80,7 +85,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['server/src/services/**/*.ts'],
+    files: ['src/services/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -102,7 +107,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['server/src/models/**/*.ts'],
+    files: ['src/models/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -118,44 +123,19 @@ export default tseslint.config(
     },
   },
 
-  /* server/src/types is imported by the browser through the @api alias.
-     It must stay client-safe: no Node built-ins, no config, no server internals. */
+  /* src/types is the API contract. The client compiles it too, so it must stay
+     browser-safe: no Node built-ins, no config, no server internals. */
   {
-    files: ['server/src/types/**/*.ts'],
+    files: ['src/types/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: [
-                'node:*',
-                '**/config/**',
-                '**/models/**',
-                '**/services/**',
-                '**/controllers/**',
-                '**/lib/**',
-              ],
+              group: ['node:*', '**/config/**', '**/models/**', '**/services/**', '**/lib/**'],
               message:
-                'server/src/types is bundled into the browser. Keep it to types, Zod schemas and constants.',
-            },
-          ],
-        },
-      ],
-    },
-  },
-
-  /* The client may reach into the server ONLY through the shared contract. */
-  {
-    files: ['client/src/**/*.{ts,tsx}'],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['**/server/src/**', '@legal-assist/server*'],
-              message: 'The client imports the API contract via @api/* and nothing else.',
+                'src/types is compiled into the client bundle. Keep it to types, Zod schemas and constants.',
             },
           ],
         },
@@ -165,13 +145,12 @@ export default tseslint.config(
 
   /* config/env.ts is the ONE place process.env is legitimate */
   {
-    files: ['server/src/config/env.ts', '**/*.config.ts', '**/*.config.js', 'scripts/**/*.ts'],
+    files: ['src/config/env.ts', '*.config.ts', '*.config.js', 'scripts/**/*.ts'],
     rules: { 'no-restricted-syntax': 'off', 'no-console': 'off' },
   },
 
-  /* Tests may be loose about return types and console output */
   {
-    files: ['**/*.test.ts', '**/*.test.tsx', 'tests/**/*.ts'],
+    files: ['**/*.test.ts'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',

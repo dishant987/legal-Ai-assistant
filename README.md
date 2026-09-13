@@ -59,14 +59,27 @@ Every bullet above maps to a feature, a file, and a test.
 
 ## Quickstart
 
+Two independent projects. Two terminals.
+
 ```bash
-npm install
-cp .env.example .env      # fill in DATABASE_URL; AI keys are optional
-npm run db:migrate
-npm run dev
+cd server && npm install && cp .env.example .env && npm run dev
 ```
 
-Open http://localhost:5173.
+```bash
+cd client && npm install && cp .env.example .env && npm run dev
+```
+
+Open http://localhost:5173 — the dev server proxies `/api` to the backend on port 3001.
+
+Each project has its own environment file:
+
+- **`server/.env`** — `DATABASE_URL` is the only required value. Every AI provider key is
+  optional; a missing one just drops that provider from the failover chain.
+- **`client/.env`** — only `VITE_API_URL`, and the defaults work as-is in development.
+
+Only `VITE_`-prefixed variables reach the browser. **No key, secret or connection string
+ever belongs in `client/.env`** — everything there is compiled into the bundle and is
+readable by anyone who opens the page. All provider credentials stay server-side.
 
 **No API keys?** It still runs — install [Ollama](https://ollama.com), `ollama pull llama3.2`, and the chain falls through to local inference. Set `DEMO=true` to serve recorded fixtures with no model at all.
 
@@ -80,13 +93,20 @@ PostgreSQL (Drizzle ORM) · Express 5 · React 19 · TypeScript strict · TanSta
 
 ## Project structure
 
-Two workspaces. `npm run dev` starts both.
+Two self-contained projects. Each owns its dependencies, TypeScript config, ESLint
+config and scripts — there is nothing shared at the repository root.
 
 ```
-client/                 Vite + React 19          → localhost:5173
-└─ src/                 proxies /api to the server
+client/                 Vite + React 19                     → localhost:5173
+├─ package.json         own deps and scripts
+├─ eslint.config.js     own rules
+├─ vite.config.ts       proxies /api → :3001, aliases @api
+└─ src/
 
-server/                 Express 5 + Drizzle      → localhost:3001
+server/                 Express 5 + Drizzle + Postgres      → localhost:3001
+├─ package.json         own deps and scripts
+├─ eslint.config.js     own rules, including the MVC boundaries
+├─ .env.example
 └─ src/
    ├─ models/           data access only — every Drizzle query lives here
    ├─ views/            response shaping (DTOs)
@@ -95,15 +115,22 @@ server/                 Express 5 + Drizzle      → localhost:3001
    ├─ routes/           /api/v1 wiring
    ├─ middleware/       validation, errors, rate limits, uploads
    ├─ config/           environment, parsed once by Zod
-   └─ types/            the client/server contract (see below)
+   └─ types/            the API contract — see below
+
+README.md               this file
 ```
 
 **One contract, no duplication.** `server/src/types/` holds the Zod schemas and error
-codes, and the client imports them through an `@api` alias. Both sides compile against
-the same files, so the API contract cannot drift — and there's no third package to
-version. Two ESLint rules keep it honest: the client may not reach into `server/src` by
-any other path, and `server/src/types` may not import Node built-ins or server internals,
-since it gets bundled into the browser.
+codes. The client compiles the very same files through an `@api` alias, so the API
+contract cannot drift between the two projects and there is no third package to publish
+or version. Two ESLint rules keep it honest: the client may not reach into `server/src`
+by any other path, and `server/src/types` may not import Node built-ins, config or
+server internals, since it ends up in the browser bundle.
+
+**The architecture is machine-checked.** The MVC layering isn't a convention — ESLint
+enforces it. Controllers cannot import models, services cannot import Express, and
+models cannot import upward. Each rule was verified by planting a violation and watching
+it fail.
 
 Architecture notes, threat model and privacy policy arrive alongside the features they
 describe.
