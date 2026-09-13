@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-const sharedDir = fileURLToPath(new URL('../server/src/shared', import.meta.url));
+const apiTypesDir = fileURLToPath(new URL('../server/src/types', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
@@ -11,10 +11,10 @@ export default defineConfig({
     alias: {
       /**
        * Client and server import the SAME schema and error-code files, so the
-       * API contract cannot drift between them (R1.4). Only `server/src/shared`
-       * is exposed — server config, models and services stay out of reach.
+       * API contract cannot drift between them (R1.4). Only `server/src/types`
+       * is exposed — config, models and services stay out of reach.
        */
-      '@shared': sharedDir,
+      '@api': apiTypesDir,
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },

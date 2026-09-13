@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * The API's error vocabulary.
  *
- * Client-safe: this module is imported by the React app through the `@shared`
+ * Client-safe: this module is imported by the React app through the `@api`
  * alias, so it must stay free of Node built-ins and server-only config.
  *
  * Adding a code here without adding its `en` and `hi` message fails the build —

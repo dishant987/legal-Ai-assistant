@@ -78,7 +78,35 @@ Open http://localhost:5173.
 
 PostgreSQL (Drizzle ORM) · Express 5 · React 19 · TypeScript strict · TanStack Query/Table/Virtual · Axios · Tailwind + shadcn/ui · Vitest + Playwright + axe-core
 
-Architecture, threat model and privacy policy: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`SECURITY.md`](SECURITY.md) · [`PRIVACY.md`](PRIVACY.md)
+## Project structure
+
+Two workspaces. `npm run dev` starts both.
+
+```
+client/                 Vite + React 19          → localhost:5173
+└─ src/                 proxies /api to the server
+
+server/                 Express 5 + Drizzle      → localhost:3001
+└─ src/
+   ├─ models/           data access only — every Drizzle query lives here
+   ├─ views/            response shaping (DTOs)
+   ├─ controllers/      thin: parse → service → view
+   ├─ services/         business logic — AI router, analysis pipeline, statutes
+   ├─ routes/           /api/v1 wiring
+   ├─ middleware/       validation, errors, rate limits, uploads
+   ├─ config/           environment, parsed once by Zod
+   └─ types/            the client/server contract (see below)
+```
+
+**One contract, no duplication.** `server/src/types/` holds the Zod schemas and error
+codes, and the client imports them through an `@api` alias. Both sides compile against
+the same files, so the API contract cannot drift — and there's no third package to
+version. Two ESLint rules keep it honest: the client may not reach into `server/src` by
+any other path, and `server/src/types` may not import Node built-ins or server internals,
+since it gets bundled into the browser.
+
+Architecture notes, threat model and privacy policy arrive alongside the features they
+describe.
 
 ---
 

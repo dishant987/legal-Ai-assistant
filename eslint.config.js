@@ -118,10 +118,10 @@ export default tseslint.config(
     },
   },
 
-  /* server/src/shared is imported by the browser through the @shared alias.
+  /* server/src/types is imported by the browser through the @api alias.
      It must stay client-safe: no Node built-ins, no config, no server internals. */
   {
-    files: ['server/src/shared/**/*.ts'],
+    files: ['server/src/types/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -137,7 +137,7 @@ export default tseslint.config(
                 '**/lib/**',
               ],
               message:
-                'server/src/shared is bundled into the browser. Keep it to types, Zod schemas and constants.',
+                'server/src/types is bundled into the browser. Keep it to types, Zod schemas and constants.',
             },
           ],
         },
@@ -155,7 +155,7 @@ export default tseslint.config(
           patterns: [
             {
               group: ['**/server/src/**', '@legal-assist/server*'],
-              message: 'The client imports the API contract via @shared/* and nothing else.',
+              message: 'The client imports the API contract via @api/* and nothing else.',
             },
           ],
         },

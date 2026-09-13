@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '@shared/errors.js';
+import { ERROR_CODES } from '@api/errors.js';
 
 /**
  * Placeholder shell. The real layout — document pane, findings list, verdict

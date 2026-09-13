@@ -27,9 +27,9 @@
 
     /* No baseUrl — deprecated in TS 6. Paths resolve relative to this file. */
     "paths": {
-      "@shared/*": ["../server/src/shared/*"],
+      "@api/*": ["../server/src/types/*"],
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "../server/src/shared"]
+  "include": ["src", "../server/src/types"]
 }
