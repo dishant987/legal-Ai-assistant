@@ -32,6 +32,15 @@ export default defineConfig({
         functions: 85,
         branches: 80,
         statements: 85,
+
+        /**
+         * R7.2 — the files where a silent regression would be worst get no
+         * slack at all. The router decides which model answers and what happens
+         * when one fails; a missed branch here is a failover path nobody has
+         * ever executed.
+         */
+        'src/services/ai/router.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
+        'src/services/ai/json.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
       },
     },
   },

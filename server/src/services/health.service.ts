@@ -3,6 +3,8 @@ import { getDbTarget } from '../lib/db.js';
 import * as healthModel from '../models/health.model.js';
 import * as providerEventModel from '../models/providerEvent.model.js';
 
+import { getRouter } from './ai/index.js';
+
 export interface Readiness {
   ready: boolean;
   database: { target: string; reachable: boolean; latencyMs: number | null };
@@ -62,7 +64,14 @@ export async function readiness(): Promise<Readiness> {
  */
 export async function providerHealth(): Promise<{
   configured: string[];
+  breakers: Record<string, { open: boolean; failures: number }>;
   recent: providerEventModel.ProviderHealth[];
 }> {
-  return { configured: configuredProviders(), recent: await providerEventModel.healthSince(24) };
+  return {
+    configured: configuredProviders(),
+    // Live circuit state, so the status strip can show a provider being skipped
+    // rather than only reporting it after the fact.
+    breakers: getRouter().snapshot(),
+    recent: await providerEventModel.healthSince(24),
+  };
 }
