@@ -145,7 +145,7 @@ export default tseslint.config(
 
   /* config/env.ts is the ONE place process.env is legitimate */
   {
-    files: ['src/config/env.ts', '*.config.ts', '*.config.js', 'scripts/**/*.ts'],
+    files: ['src/config/env.ts', '*.config.ts', '*.config.js', 'src/scripts/**/*.ts'],
     rules: { 'no-restricted-syntax': 'off', 'no-console': 'off' },
   },
 

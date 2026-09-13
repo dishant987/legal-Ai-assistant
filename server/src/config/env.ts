@@ -1,4 +1,22 @@
+import { config as loadDotenv } from 'dotenv';
 import { z } from 'zod';
+
+/**
+ * An optional value where blank counts as absent.
+ *
+ * `.env.example` ships every key present but empty, so a copied `.env` gives
+ * dotenv `GEMINI_API_KEY=""`. Without this, an empty string fails `.min(1)` and
+ * the server refuses to boot — which would break the whole point of the keys
+ * being optional. Blank and missing must mean the same thing: no provider.
+ *
+ * @param inner - The schema to apply when a real value is present.
+ */
+function blankAsAbsent<T extends z.ZodType>(inner: T): z.ZodOptional<T> {
+  return z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    inner.optional(),
+  ) as unknown as z.ZodOptional<T>;
+}
 
 /**
  * Environment schema. Parsed exactly once, at boot.
@@ -18,7 +36,7 @@ const EnvSchema = z.object({
   /** Local Postgres or Neon — the only thing that changes between them (R12.1). */
   DATABASE_URL: z.url(),
   /** Neon only: the unpooled host. drizzle-kit needs it for migrations (R12.3). */
-  DIRECT_DATABASE_URL: z.url().optional(),
+  DIRECT_DATABASE_URL: blankAsAbsent(z.url()),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
@@ -29,15 +47,15 @@ const EnvSchema = z.object({
     .transform((v) => v === 'true'),
 
   // --- AI providers: all optional (R2.8) ---
-  GEMINI_API_KEY: z.string().min(1).optional(),
-  GROQ_API_KEY: z.string().min(1).optional(),
-  MISTRAL_API_KEY: z.string().min(1).optional(),
+  GEMINI_API_KEY: blankAsAbsent(z.string().min(1)),
+  GROQ_API_KEY: blankAsAbsent(z.string().min(1)),
+  MISTRAL_API_KEY: blankAsAbsent(z.string().min(1)),
   OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
 
   // --- Storage: optional. Absent means in-memory only, which is a valid mode (R3.9) ---
-  CLOUDINARY_CLOUD_NAME: z.string().min(1).optional(),
-  CLOUDINARY_API_KEY: z.string().min(1).optional(),
-  CLOUDINARY_API_SECRET: z.string().min(1).optional(),
+  CLOUDINARY_CLOUD_NAME: blankAsAbsent(z.string().min(1)),
+  CLOUDINARY_API_KEY: blankAsAbsent(z.string().min(1)),
+  CLOUDINARY_API_SECRET: blankAsAbsent(z.string().min(1)),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -79,7 +97,12 @@ let cached: Env | undefined;
  * @returns The validated, typed environment.
  */
 export function getEnv(): Env {
-  cached ??= parseEnv();
+  if (cached === undefined) {
+    // dotenv never overwrites values already in the environment, so a real
+    // deployment's variables always win over a stray .env file.
+    loadDotenv({ quiet: true });
+    cached = parseEnv();
+  }
   return cached;
 }
 

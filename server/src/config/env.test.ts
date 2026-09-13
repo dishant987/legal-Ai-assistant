@@ -46,8 +46,41 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ ...valid, NODE_ENV: 'staging' })).toThrow();
   });
 
-  it('rejects an empty provider key — absent is valid, blank is a typo', () => {
-    expect(() => parseEnv({ ...valid, GEMINI_API_KEY: '' })).toThrow(/GEMINI_API_KEY/);
+  it('treats a blank provider key as absent, not as an error', () => {
+    // .env.example ships every key present but empty, so a copied .env hands
+    // dotenv GEMINI_API_KEY="". Refusing to boot on that would break the whole
+    // point of the keys being optional.
+    const env = parseEnv({
+      ...valid,
+      GEMINI_API_KEY: '',
+      GROQ_API_KEY: '   ',
+      CLOUDINARY_API_SECRET: '',
+      DIRECT_DATABASE_URL: '',
+    });
+    expect(env.GEMINI_API_KEY).toBeUndefined();
+    expect(env.GROQ_API_KEY).toBeUndefined();
+    expect(env.CLOUDINARY_API_SECRET).toBeUndefined();
+    expect(env.DIRECT_DATABASE_URL).toBeUndefined();
+  });
+
+  it('still rejects a non-blank but malformed optional value', () => {
+    expect(() => parseEnv({ ...valid, DIRECT_DATABASE_URL: 'not-a-url' })).toThrow(/DIRECT_DATABASE_URL/);
+  });
+
+  it('boots from an unedited copy of .env.example', () => {
+    // The exact shape a newcomer produces with `cp .env.example .env`.
+    const env = parseEnv({
+      NODE_ENV: 'test',
+      DATABASE_URL: valid.DATABASE_URL,
+      GEMINI_API_KEY: '',
+      GROQ_API_KEY: '',
+      MISTRAL_API_KEY: '',
+      OLLAMA_BASE_URL: 'http://localhost:11434',
+      CLOUDINARY_CLOUD_NAME: '',
+      CLOUDINARY_API_KEY: '',
+      CLOUDINARY_API_SECRET: '',
+    });
+    expect(env.PORT).toBe(3001);
   });
 });
 

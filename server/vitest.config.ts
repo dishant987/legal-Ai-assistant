@@ -8,7 +8,16 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'lcov'],
       include: ['src/**/*.ts'],
-      exclude: ['**/*.test.ts', '**/index.ts', 'src/server.ts'],
+      exclude: [
+        '**/*.test.ts',
+        '**/index.ts',
+        // Process entry points: exercised end to end, not unit-tested.
+        'src/server.ts',
+        'src/scripts/**',
+        // Pure table declarations, no branches to cover. The constraints and
+        // cascades they describe are verified by the model integration tests.
+        'src/models/schema.ts',
+      ],
 
       /**
        * R7.1 — thresholds are enforced, not advisory. CI fails below them.
