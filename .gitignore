@@ -23,3 +23,6 @@ test-results/
 Thumbs.db
 *.log
 npm-debug.log*
+
+# Claude Code local tooling
+.claude/

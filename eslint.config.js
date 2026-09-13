@@ -5,14 +5,7 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: [
-      '**/dist/**',
-      '**/coverage/**',
-      '**/node_modules/**',
-      'docs/**',
-      'db/migrations/**',
-      'client/**', // added in Step 7 with its own React config
-    ],
+    ignores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', 'docs/**', 'db/migrations/**'],
   },
 
   js.configs.recommended,
@@ -20,7 +13,7 @@ export default tseslint.config(
   tseslint.configs.stylisticTypeChecked,
 
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
         projectService: {
@@ -46,7 +39,10 @@ export default tseslint.config(
 
       'import-x/order': [
         'error',
-        { groups: ['builtin', 'external', 'internal', 'parent', 'sibling'], 'newlines-between': 'always' },
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling'],
+          'newlines-between': 'always',
+        },
       ],
 
       /* R8.6 — Drizzle parameterises everything; sql.raw() is the one hole. */
@@ -58,7 +54,7 @@ export default tseslint.config(
         },
         {
           selector: "MemberExpression[object.name='process'][property.name='env']",
-          message: 'Read config from @legal-assist/shared/config, never process.env directly.',
+          message: 'Read config from server/src/config/env.ts, never process.env directly.',
         },
       ],
     },
@@ -121,16 +117,45 @@ export default tseslint.config(
       ],
     },
   },
+
+  /* server/src/shared is imported by the browser through the @shared alias.
+     It must stay client-safe: no Node built-ins, no config, no server internals. */
   {
-    files: ['shared/**/*.ts'],
+    files: ['server/src/shared/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['**/server/**', '@legal-assist/server*'],
-              message: 'shared/ must not depend on server/ — the client imports it too.',
+              group: [
+                'node:*',
+                '**/config/**',
+                '**/models/**',
+                '**/services/**',
+                '**/controllers/**',
+                '**/lib/**',
+              ],
+              message:
+                'server/src/shared is bundled into the browser. Keep it to types, Zod schemas and constants.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  /* The client may reach into the server ONLY through the shared contract. */
+  {
+    files: ['client/src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/server/src/**', '@legal-assist/server*'],
+              message: 'The client imports the API contract via @shared/* and nothing else.',
             },
           ],
         },
@@ -140,13 +165,13 @@ export default tseslint.config(
 
   /* config/env.ts is the ONE place process.env is legitimate */
   {
-    files: ['shared/src/config/env.ts', 'eslint.config.js', 'drizzle.config.ts', 'scripts/**/*.ts'],
+    files: ['server/src/config/env.ts', '**/*.config.ts', '**/*.config.js', 'scripts/**/*.ts'],
     rules: { 'no-restricted-syntax': 'off', 'no-console': 'off' },
   },
 
   /* Tests may be loose about return types and console output */
   {
-    files: ['**/*.test.ts', 'tests/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.test.tsx', 'tests/**/*.ts'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
