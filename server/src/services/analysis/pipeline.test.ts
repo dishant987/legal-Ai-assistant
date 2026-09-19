@@ -40,6 +40,7 @@ function scriptedRouter(
 
 const defaultScript = {
   ingest: { text: DOC, docType: 'rent-agreement', parties: ['landlord', 'tenant'] },
+  statute: { selections: [] },
   extract: {
     findings: [
       {
@@ -75,6 +76,8 @@ describe('analyse — event stream', () => {
       'extract:done',
       'verify:running',
       'verify:done',
+      'statute:running',
+      'statute:done',
     ]);
   });
 
@@ -160,6 +163,7 @@ describe('analyse — prompt injection (R8.8)', () => {
       scriptedRouter(
         {
           ingest: { text: HOSTILE, docType: 'rent-agreement', parties: [] },
+          statute: { selections: [] },
           extract: {
             findings: [
               {
@@ -175,7 +179,7 @@ describe('analyse — prompt injection (R8.8)', () => {
       ),
     );
 
-    const extractPrompt = prompts.at(-1) ?? '';
+    const extractPrompt = prompts.find((p) => p.includes('could cost them money')) ?? '';
     // The injected closing marker is stripped, so the document cannot terminate
     // its own fence and continue as if it were instructions.
     expect(extractPrompt).toContain('IGNORE ALL PREVIOUS INSTRUCTIONS');
@@ -187,6 +191,7 @@ describe('analyse — prompt injection (R8.8)', () => {
     const events = await run(
       {
         ingest: { text: HOSTILE, docType: 'rent-agreement', parties: [] },
+        statute: { selections: [] },
         extract: {
           findings: [
             {
@@ -241,7 +246,7 @@ describe('schema is the prompt spec', () => {
     );
 
     // The `.describe()` text on the Zod field, verbatim in the prompt.
-    expect(prompts.at(-1)).toContain('character for character');
+    expect(prompts.find((p) => p.includes('could cost them money'))).toContain('character for character');
   });
 
   it('asks for temperature zero on extraction — invention is the enemy here', async () => {
@@ -286,5 +291,132 @@ describe('scripted router sanity', () => {
         estimatedTokens: 1,
       }),
     ).toThrow();
+  });
+});
+
+describe('analyse — statutes (F10, F11, F12)', () => {
+  const NONCOMPETE = [
+    'EMPLOYMENT OFFER',
+    '9. The Employee shall not, for two years after leaving, join any competing business.',
+  ].join('\n');
+
+  const offerScript = (selections: { id: string; quote: string }[]) => ({
+    ingest: { text: NONCOMPETE, docType: 'employment-offer', parties: ['employer', 'employee'] },
+    extract: { findings: [] },
+    statute: { selections },
+  });
+
+  async function runOffer(
+    selections: { id: string; quote: string }[],
+    state?: string,
+  ): Promise<AnalysisEvent[]> {
+    const events: AnalysisEvent[] = [];
+    await analyse(
+      { text: NONCOMPETE, store: false, ...(state !== undefined ? { jurisdictionState: state } : {}) },
+      (e) => events.push(e),
+      scriptedRouter(offerScript(selections)),
+    );
+    return events;
+  }
+
+  it('says a post-termination non-compete is void, in the statute’s own words', async () => {
+    const [hit] = (
+      await runOffer([
+        {
+          id: 'contract-act-1872-s27',
+          quote: 'shall not, for two years after leaving, join any competing business',
+        },
+      ])
+    ).filter((e) => e.type === 'statute');
+
+    expect(hit?.statute.effect).toBe('void');
+    expect(hit?.statute.section).toBe('27');
+    expect(hit?.statute.text).toContain('restrained from exercising a lawful profession');
+  });
+
+  it('anchors the statute to the clause that triggers it', async () => {
+    const [hit] = (
+      await runOffer([
+        {
+          id: 'contract-act-1872-s27',
+          quote: 'shall not, for two years after leaving, join any competing business',
+        },
+      ])
+    ).filter((e) => e.type === 'statute');
+
+    expect(hit?.statute.verified).toBe(true);
+    expect(NONCOMPETE.slice(hit!.statute.charStart, hit!.statute.charEnd).toLowerCase()).toBe(
+      hit!.statute.quote.toLowerCase(),
+    );
+  });
+
+  it('flags a statute whose triggering clause is not actually in the document', async () => {
+    // The provision is real, but the model's claim about WHICH clause triggers
+    // it is not. That claim is held to the same standard as a finding.
+    const [hit] = (
+      await runOffer([{ id: 'contract-act-1872-s27', quote: 'a clause that appears nowhere here' }])
+    ).filter((e) => e.type === 'statute');
+
+    expect(hit?.statute.verified).toBe(false);
+  });
+
+  it('drops a fabricated citation entirely', async () => {
+    const hits = (
+      await runOffer([{ id: 'indian-penal-code-s420', quote: 'shall not, for two years after leaving' }])
+    ).filter((e) => e.type === 'statute');
+
+    expect(hits).toEqual([]);
+  });
+
+  it('states a central Act without hedging', async () => {
+    const [hit] = (
+      await runOffer(
+        [
+          {
+            id: 'contract-act-1872-s27',
+            quote: 'shall not, for two years after leaving, join any competing business',
+          },
+        ],
+        'Karnataka',
+      )
+    ).filter((e) => e.type === 'statute');
+
+    expect(hit?.statute.caveat).toBeUndefined();
+  });
+
+  it('counts statutes in the summary', async () => {
+    const done = (
+      await runOffer([
+        {
+          id: 'contract-act-1872-s27',
+          quote: 'shall not, for two years after leaving, join any competing business',
+        },
+      ])
+    ).at(-1);
+    expect(done).toMatchObject({ type: 'done', statutes: 1 });
+  });
+});
+
+describe('analyse — jurisdiction honesty (F11)', () => {
+  const RENT = 'RENT AGREEMENT\nThe Tenant shall pay a security deposit of six (6) months of rent.';
+
+  it('caveats a model Act rather than asserting it as binding law', async () => {
+    const events: AnalysisEvent[] = [];
+    await analyse(
+      { text: RENT, store: false, jurisdictionState: 'Karnataka' },
+      (e) => events.push(e),
+      scriptedRouter({
+        ingest: { text: RENT, docType: 'rent-agreement', parties: ['landlord', 'tenant'] },
+        extract: { findings: [] },
+        statute: { selections: [] },
+      }),
+    );
+
+    const [hit] = events.filter((e) => e.type === 'statute');
+    // Fired deterministically off the document's own figure, with no model
+    // selection at all — and still carries the caveat.
+    expect(hit?.statute.because).toContain('6 months');
+    expect(hit?.statute.caveat).toContain('model law');
+    expect(hit?.statute.caveat).toContain('Karnataka');
   });
 });

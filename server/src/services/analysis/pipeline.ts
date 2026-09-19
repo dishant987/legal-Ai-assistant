@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 import * as analysisModel from '../../models/analysis.model.js';
 import * as documentModel from '../../models/document.model.js';
-import type { AnalysisEvent } from '../../types/events.js';
+import { statuteEventSchema, type AnalysisEvent, type StatuteEvent } from '../../types/events.js';
 import type { VerifiedFinding } from '../../types/finding.js';
 import { getRouter } from '../ai/index.js';
 import type { Router } from '../ai/router.js';
@@ -10,7 +10,19 @@ import type { FileRef } from '../ai/types.js';
 
 import { extract } from './stages/extract.js';
 import { classify, ingestFile } from './stages/ingest.js';
-import { tally, verify } from './stages/verify.js';
+import { findStatutes, type StatuteMatch } from './stages/statute.js';
+import { anchorQuote, tally, verify } from './stages/verify.js';
+
+/**
+ * Hold a statute match to the same standard as a finding.
+ *
+ * The provision's own words come from the shipped corpus and are not in doubt.
+ * What needs checking is the model's claim about WHICH clause triggers it —
+ * so that quote goes through the same verifier.
+ */
+function anchor(hit: StatuteMatch, text: string): StatuteEvent {
+  return { ...hit, ...anchorQuote(text, hit.quote) };
+}
 
 export type Emit = (event: AnalysisEvent) => void;
 
@@ -66,11 +78,17 @@ async function replayCached(hash: string, emit: Emit, startedAt: number): Promis
     });
   }
 
+  const statutes = statuteEventSchema.array().safeParse(previous.statutes);
+  if (statutes.success) {
+    for (const statute of statutes.data) emit({ type: 'statute', statute });
+  }
+
   emit({
     type: 'done',
     verified: previous.verifiedCount,
     rejected: previous.rejectedCount,
     provider: previous.providerUsed,
+    statutes: statutes.success ? statutes.data.length : 0,
     degraded: false,
     durationMs: Date.now() - startedAt,
   });
@@ -136,6 +154,12 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
 
   const counts = tally(verified);
 
+  emit({ type: 'stage', stage: 'statute', status: 'running' });
+  const matched = await findStatutes(router, ingested.text, ingested.docType, input.jurisdictionState);
+  const statutes = matched.map((hit) => anchor(hit, ingested.text));
+  for (const statute of statutes) emit({ type: 'statute', statute });
+  emit({ type: 'stage', stage: 'statute', status: 'done' });
+
   if (document) {
     emit({ type: 'stage', stage: 'persist', status: 'running' });
     await analysisModel.create(
@@ -145,6 +169,7 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
         durationMs: Date.now() - startedAt,
         verifiedCount: counts.verified,
         rejectedCount: counts.rejected,
+        statutes,
       },
       verified.map((f) => ({
         kind: f.kind,
@@ -164,6 +189,7 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
     verified: counts.verified,
     rejected: counts.rejected,
     provider,
+    statutes: statutes.length,
     degraded,
     durationMs: Date.now() - startedAt,
   });

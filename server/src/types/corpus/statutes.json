@@ -1,0 +1,93 @@
+[
+  {
+    "id": "contract-act-1872-s27",
+    "act": "Indian Contract Act, 1872",
+    "section": "27",
+    "text": "Every agreement by which any one is restrained from exercising a lawful profession, trade or business of any kind, is to that extent void.",
+    "plain": "A clause stopping you from working elsewhere after the contract ends is void in India, whatever you signed. The one recognised exception is the sale of a business's goodwill. Restrictions that apply only while the contract is still running are treated differently.",
+    "binding": { "scope": "all-india" },
+    "effect": "void",
+    "appliesTo": ["employment-offer", "freelance-contract", "nda", "other"],
+    "trigger": "a clause restraining the reader from working for competitors, taking similar work, or starting a competing business AFTER the contract ends",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/2187"
+  },
+  {
+    "id": "contract-act-1872-s28",
+    "act": "Indian Contract Act, 1872",
+    "section": "28",
+    "text": "Every agreement by which any party thereto is restricted absolutely from enforcing his rights under or in respect of any contract, by the usual legal proceedings in the ordinary tribunals, or which limits the time within which he may thus enforce his rights, is void to that extent.",
+    "plain": "A clause that stops you going to court at all, or shortens the time you have to bring a claim, is void to that extent. Agreeing to arbitration is not caught by this; being shut out of every forum is.",
+    "binding": { "scope": "all-india" },
+    "effect": "void",
+    "appliesTo": [
+      "rent-agreement",
+      "employment-offer",
+      "freelance-contract",
+      "loan-agreement",
+      "terms-of-service",
+      "other"
+    ],
+    "trigger": "a clause waiving the right to sue, barring legal recourse, or requiring claims to be brought within a period shorter than the ordinary limitation period",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/2187"
+  },
+  {
+    "id": "contract-act-1872-s23",
+    "act": "Indian Contract Act, 1872",
+    "section": "23",
+    "text": "The consideration or object of an agreement is lawful, unless it is forbidden by law; or is of such a nature that, if permitted, it would defeat the provisions of any law; or is fraudulent; or involves or implies injury to the person or property of another; or the Court regards it as immoral, or opposed to public policy.",
+    "plain": "An agreement to do something unlawful, or that only works by getting around a law, is not enforceable at all.",
+    "binding": { "scope": "all-india" },
+    "effect": "void",
+    "appliesTo": ["rent-agreement", "employment-offer", "freelance-contract", "loan-agreement", "other"],
+    "trigger": "a clause requiring something unlawful, or plainly structured to sidestep a statutory protection",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/2187"
+  },
+  {
+    "id": "model-tenancy-act-2021-s11",
+    "act": "Model Tenancy Act, 2021",
+    "section": "11",
+    "text": "The security deposit to be paid by the tenant in advance shall not exceed two months' rent in case of residential premises and not exceed six months' rent in case of non-residential premises.",
+    "plain": "Where this Act is in force, a home deposit is capped at two months' rent and a commercial one at six.",
+    "binding": { "scope": "model-act", "adoptedBy": [] },
+    "effect": "capped",
+    "appliesTo": ["rent-agreement"],
+    "trigger": "a security deposit larger than two months' rent for a home, or six months' for commercial premises",
+    "sourceUrl": "https://mohua.gov.in/upload/whatsnew/60persuant2021.pdf"
+  },
+  {
+    "id": "gratuity-act-1972-s4",
+    "act": "Payment of Gratuity Act, 1972",
+    "section": "4(1)",
+    "text": "Gratuity shall be payable to an employee on the termination of his employment after he has rendered continuous service for not less than five years.",
+    "plain": "After five years' continuous service, gratuity is a statutory entitlement. A contract cannot take it away, though it may offer more.",
+    "binding": { "scope": "all-india" },
+    "effect": "minimum",
+    "appliesTo": ["employment-offer"],
+    "trigger": "a clause denying or conditioning gratuity, or making it discretionary",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/1900"
+  },
+  {
+    "id": "dpdp-act-2023-s6",
+    "act": "Digital Personal Data Protection Act, 2023",
+    "section": "6(1)",
+    "text": "The consent given by the Data Principal shall be free, specific, informed, unconditional and unambiguous with a clear affirmative action, and shall signify an agreement to the processing of her personal data for the specified purpose and be limited to such personal data as is necessary for such specified purpose.",
+    "plain": "Consent to use your personal data has to be specific and freely given, and can only cover data actually needed for the stated purpose. A blanket permission buried in the terms does not meet this.",
+    "binding": { "scope": "all-india" },
+    "effect": "requires",
+    "appliesTo": ["terms-of-service", "employment-offer", "freelance-contract", "other"],
+    "trigger": "a clause taking broad or open-ended permission to collect, use, share or sell personal data",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/20087"
+  },
+  {
+    "id": "consumer-protection-act-2019-s2-46",
+    "act": "Consumer Protection Act, 2019",
+    "section": "2(46)",
+    "text": "\"unfair contract\" means a contract between a manufacturer or trader or service provider on one hand, and a consumer on the other, having such terms which cause significant change in the rights of such consumer.",
+    "plain": "Terms that shift the balance sharply against a consumer — excessive security deposits, one-sided termination, unreasonable penalties — can be struck down by a consumer commission.",
+    "binding": { "scope": "all-india" },
+    "effect": "unenforceable",
+    "appliesTo": ["terms-of-service", "loan-agreement", "other"],
+    "trigger": "a one-sided term imposed on a consumer: excessive deposit, unilateral variation or termination, or a penalty out of proportion to the loss",
+    "sourceUrl": "https://www.indiacode.nic.in/handle/123456789/15256"
+  }
+]

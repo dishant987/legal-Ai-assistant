@@ -84,38 +84,50 @@ function normalise(source: string): Normalised {
  * @param findings - What the model claimed to find.
  * @returns Every finding, each marked verified or not. Nothing is dropped.
  */
-export function verify(source: string, findings: readonly Finding[]): VerifiedFinding[] {
+export interface Anchor {
+  verified: boolean;
+  charStart: number;
+  charEnd: number;
+  rejectedReason?: string;
+}
+
+/**
+ * Locate a quote in the document, or report why it is not there.
+ *
+ * The single implementation of the check. Findings and statute matches both go
+ * through it, so a claim of either kind is held to exactly the same standard.
+ *
+ * @param source - The document text, exactly as shown to the user.
+ * @param quote - The text claimed to come from it.
+ * @returns Whether it was found, and where in the original it sits.
+ */
+export function anchorQuote(source: string, quote: string): Anchor {
   const haystack = normalise(source);
+  const needle = normalise(quote);
 
-  return findings.map((finding) => {
-    const needle = normalise(finding.quote);
+  if (needle.text.length === 0) {
+    return { verified: false, charStart: 0, charEnd: 0, rejectedReason: 'empty quote' };
+  }
 
-    if (needle.text.length === 0) {
-      return { ...finding, verified: false, charStart: 0, charEnd: 0, rejectedReason: 'empty quote' };
-    }
+  const at = haystack.text.indexOf(needle.text);
+  if (at === -1) {
+    return { verified: false, charStart: 0, charEnd: 0, rejectedReason: 'not found in the document' };
+  }
 
-    const at = haystack.text.indexOf(needle.text);
-    if (at === -1) {
-      return {
-        ...finding,
-        verified: false,
-        charStart: 0,
-        charEnd: 0,
-        rejectedReason: 'not found in the document',
-      };
-    }
+  // Both indices are provably in range: `at` came from indexOf on
+  // haystack.text, the needle is non-empty, and map has one entry per
+  // character of haystack.text. A runtime guard here would be an unreachable
+  // branch rather than a safety net.
+  /* eslint-disable @typescript-eslint/no-non-null-assertion */
+  const charStart = haystack.map[at]!;
+  const lastIndex = haystack.map[at + needle.text.length - 1]!;
+  /* eslint-enable @typescript-eslint/no-non-null-assertion */
 
-    // Both indices are provably in range: `at` came from indexOf on
-    // haystack.text, the needle is non-empty, and map has one entry per
-    // character of haystack.text. A runtime guard here would be an unreachable
-    // branch rather than a safety net.
-    /* eslint-disable @typescript-eslint/no-non-null-assertion */
-    const charStart = haystack.map[at]!;
-    const lastIndex = haystack.map[at + needle.text.length - 1]!;
-    /* eslint-enable @typescript-eslint/no-non-null-assertion */
+  return { verified: true, charStart, charEnd: lastIndex + 1 };
+}
 
-    return { ...finding, verified: true, charStart, charEnd: lastIndex + 1 };
-  });
+export function verify(source: string, findings: readonly Finding[]): VerifiedFinding[] {
+  return findings.map((finding) => ({ ...finding, ...anchorQuote(source, finding.quote) }));
 }
 
 /** Split verified from rejected, for the summary counts. */

@@ -21,6 +21,8 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    // The statute corpus ships as data, imported with a type attribute.
+    "resolveJsonModule": true,
 
     "rootDir": "./src",
     "outDir": "./dist",

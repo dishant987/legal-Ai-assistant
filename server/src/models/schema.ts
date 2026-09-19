@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  jsonb,
   timestamp,
   uniqueIndex,
   uuid,
@@ -84,6 +85,12 @@ export const analyses = pgTable(
     /** How many findings survived the verifier, and how many it struck out (F9). */
     verifiedCount: integer('verified_count').notNull().default(0),
     rejectedCount: integer('rejected_count').notNull().default(0),
+    /**
+     * Statute hits, stored with the analysis rather than in their own table:
+     * they are always read together and never queried on their own. Without
+     * this a cached replay would silently lose them.
+     */
+    statutes: jsonb('statutes').$type<unknown[]>().notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('analyses_document_id_idx').on(t.documentId)],

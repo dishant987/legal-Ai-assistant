@@ -1,0 +1,1 @@
+ALTER TABLE "analyses" ADD COLUMN "statutes" jsonb DEFAULT '[]'::jsonb NOT NULL;

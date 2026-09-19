@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { errorCodeSchema } from './errors.js';
 import { verifiedFindingSchema } from './finding.js';
+import { statuteHitSchema } from './statute.js';
 
 /**
  * The server-sent events an analysis emits.
@@ -13,8 +14,19 @@ import { verifiedFindingSchema } from './finding.js';
  * Client-safe: the browser parses these, so the shapes live here and both sides
  * compile the same definitions.
  */
-export const stageNames = ['ingest', 'extract', 'verify', 'persist'] as const;
+export const stageNames = ['ingest', 'extract', 'verify', 'statute', 'persist'] as const;
 export type StageName = (typeof stageNames)[number];
+
+/** A statute match, anchored to the clause it bears on. */
+export const statuteEventSchema = statuteHitSchema.extend({
+  quote: z.string(),
+  /** Whether that clause was actually found in the document. */
+  verified: z.boolean(),
+  charStart: z.number().int().nonnegative(),
+  charEnd: z.number().int().nonnegative(),
+});
+
+export type StatuteEvent = z.infer<typeof statuteEventSchema>;
 
 export const analysisEventSchema = z.discriminatedUnion('type', [
   z.object({
@@ -38,11 +50,18 @@ export const analysisEventSchema = z.discriminatedUnion('type', [
     cached: z.boolean(),
   }),
 
+  /**
+   * A provision the document runs into. Separate from a finding because its
+   * authority is different: a finding quotes the document, this quotes the law.
+   */
+  z.object({ type: z.literal('statute'), statute: statuteEventSchema }),
+
   z.object({
     type: z.literal('done'),
     verified: z.number().int().nonnegative(),
     rejected: z.number().int().nonnegative(),
     provider: z.string(),
+    statutes: z.number().int().nonnegative(),
     /** True when a fallback provider served this — the UI says so (R2.11). */
     degraded: z.boolean(),
     durationMs: z.number().int().nonnegative(),

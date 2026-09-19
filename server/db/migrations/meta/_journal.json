@@ -15,6 +15,13 @@
       "when": 1789325702582,
       "tag": "0001_wet_cerise",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789838000636,
+      "tag": "0002_third_maximus",
+      "breakpoints": true
     }
   ]
 }

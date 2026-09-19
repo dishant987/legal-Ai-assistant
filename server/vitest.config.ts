@@ -57,6 +57,20 @@ export default defineConfig({
          */
         'src/services/ai/router.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
         'src/services/ai/json.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
+        // The verifier decides what a reader is allowed to be told; the matcher
+        // decides what law they are told it under. Neither gets any slack.
+        'src/services/analysis/stages/verify.ts': {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
+        'src/services/statutes/matcher.ts': {
+          lines: 100,
+          functions: 100,
+          branches: 100,
+          statements: 100,
+        },
       },
     },
   },

@@ -27,6 +27,13 @@ let calls = 0;
 const router: Router = {
   complete: (req) => {
     calls += 1;
+    if (req.stage === 'statute') {
+      return Promise.resolve({
+        data: req.schema.parse({ selections: [] }),
+        provider: 'gemini' as const,
+        degraded: false,
+      });
+    }
     const answer =
       req.stage === 'ingest'
         ? { text: DOC, docType: 'rent-agreement', parties: ['landlord', 'tenant'] }
