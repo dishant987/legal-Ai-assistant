@@ -1,0 +1,152 @@
+@import 'tailwindcss';
+
+@import '@fontsource-variable/fraunces';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+/**
+ * Dark mode has three states: explicitly dark, explicitly light, or following
+ * the system. `data-theme` is only ever set for the first two, so the variant
+ * has to match the explicit attribute AND the system preference when no choice
+ * has been made.
+ */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme='light']) *) {
+      @slot;
+    }
+  }
+}
+
+/**
+ * Warm paper, not white.
+ *
+ * Every colour here has been measured against the surface it sits on. The one
+ * that matters: `--accent-bright` (#D97757) is 3.3:1 on the light background —
+ * fine for fills and large display type, and a failure for body text. Anything
+ * a reader has to actually read uses `--accent` (5.1:1).
+ */
+:root {
+  --bg: #faf9f5;
+  --surface: #ffffff;
+  --surface-sunk: #f0eee6;
+  --border: #e5e3dc;
+  --text: #141413; /* 18.3:1 on --bg */
+  --text-muted: #6b6862; /*  5.3:1 ✅ */
+  --accent: #b04a2c; /*  5.1:1 ✅ body text, icons, links */
+  --accent-bright: #d97757; /*  3.3:1 — fills and large display ONLY */
+  --accent-sunk: #f5e6e0;
+  --danger: #a32d22;
+  --warn: #8a5f14;
+  --ok: #2a6047;
+
+  --radius: 10px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #1f1e1d;
+    --surface: #262624;
+    --surface-sunk: #1a1917;
+    --border: #3a3937;
+    --text: #f5f4ee; /* 15.8:1 */
+    --text-muted: #a39e95; /*  6.3:1 ✅ */
+    --accent: #e08a6b; /*  6.4:1 ✅ */
+    --accent-bright: #d97757;
+    --accent-sunk: #33251f;
+    --danger: #e8776a;
+    --warn: #d9a441;
+    --ok: #6fbf95;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #1f1e1d;
+  --surface: #262624;
+  --surface-sunk: #1a1917;
+  --border: #3a3937;
+  --text: #f5f4ee;
+  --text-muted: #a39e95;
+  --accent: #e08a6b;
+  --accent-bright: #d97757;
+  --accent-sunk: #33251f;
+  --danger: #e8776a;
+  --warn: #d9a441;
+  --ok: #6fbf95;
+
+  color-scheme: dark;
+}
+
+/* `inline` so the utilities resolve to the live custom property, not a copy. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-sunk: var(--accent-sunk);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+
+  --font-serif: 'Fraunces Variable', Georgia, serif;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  --radius-card: var(--radius);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  /* R11.5 — never remove a focus ring without replacing it. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--accent-sunk);
+    color: var(--text);
+  }
+}
+
+/**
+ * R11.6 — motion is decoration. Anyone who has asked their system to stop it
+ * gets a still interface, not a slower one.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
