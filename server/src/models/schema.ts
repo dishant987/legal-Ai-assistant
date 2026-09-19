@@ -135,6 +135,11 @@ export const obligations = pgTable(
     duty: text('duty').notNull(),
     dueBy: text('due_by'),
     consequence: text('consequence'),
+    /** Anchored like a finding: an obligation is a claim about the document too. */
+    quote: text('quote'),
+    charStart: integer('char_start').notNull().default(0),
+    charEnd: integer('char_end').notNull().default(0),
+    verified: boolean('verified').notNull().default(false),
   },
   (t) => [index('obligations_analysis_id_idx').on(t.analysisId)],
 );

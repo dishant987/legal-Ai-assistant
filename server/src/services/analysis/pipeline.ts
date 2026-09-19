@@ -10,6 +10,7 @@ import type { FileRef } from '../ai/types.js';
 
 import { extract } from './stages/extract.js';
 import { classify, ingestFile } from './stages/ingest.js';
+import { findObligations } from './stages/obligations.js';
 import { findStatutes, type StatuteMatch } from './stages/statute.js';
 import { anchorQuote, tally, verify } from './stages/verify.js';
 
@@ -63,6 +64,22 @@ async function replayCached(hash: string, emit: Emit, startedAt: number): Promis
     cached: true,
   });
 
+  for (const row of previous.obligations) {
+    emit({
+      type: 'obligation',
+      obligation: {
+        party: row.party,
+        duty: row.duty,
+        dueBy: row.dueBy ?? '',
+        consequence: row.consequence ?? '',
+        quote: row.quote ?? '',
+        verified: row.verified,
+        charStart: row.charStart,
+        charEnd: row.charEnd,
+      },
+    });
+  }
+
   for (const row of previous.findings) {
     emit({
       type: 'finding',
@@ -89,6 +106,7 @@ async function replayCached(hash: string, emit: Emit, startedAt: number): Promis
     rejected: previous.rejectedCount,
     provider: previous.providerUsed,
     statutes: statutes.success ? statutes.data.length : 0,
+    obligations: previous.obligations.length,
     degraded: false,
     durationMs: Date.now() - startedAt,
   });
@@ -154,11 +172,23 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
 
   const counts = tally(verified);
 
+  // Independent of each other, so they run together rather than end to end
+  // (R9.3). On a long contract that is most of a round trip saved.
   emit({ type: 'stage', stage: 'statute', status: 'running' });
-  const matched = await findStatutes(router, ingested.text, ingested.docType, input.jurisdictionState);
+  emit({ type: 'stage', stage: 'obligations', status: 'running' });
+
+  const [matched, rawObligations] = await Promise.all([
+    findStatutes(router, ingested.text, ingested.docType, input.jurisdictionState),
+    findObligations(router, ingested.text, ingested.docType),
+  ]);
+
   const statutes = matched.map((hit) => anchor(hit, ingested.text));
   for (const statute of statutes) emit({ type: 'statute', statute });
   emit({ type: 'stage', stage: 'statute', status: 'done' });
+
+  const obligations = rawObligations.map((o) => ({ ...o, ...anchorQuote(ingested.text, o.quote) }));
+  for (const obligation of obligations) emit({ type: 'obligation', obligation });
+  emit({ type: 'stage', stage: 'obligations', status: 'done' });
 
   if (document) {
     emit({ type: 'stage', stage: 'persist', status: 'running' });
@@ -180,6 +210,16 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
         plainText: f.plainText,
         verified: f.verified,
       })),
+      obligations.map((o) => ({
+        party: o.party,
+        duty: o.duty,
+        dueBy: o.dueBy,
+        consequence: o.consequence,
+        quote: o.quote,
+        charStart: o.charStart,
+        charEnd: o.charEnd,
+        verified: o.verified,
+      })),
     );
     emit({ type: 'stage', stage: 'persist', status: 'done' });
   }
@@ -190,6 +230,7 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
     rejected: counts.rejected,
     provider,
     statutes: statutes.length,
+    obligations: obligations.length,
     degraded,
     durationMs: Date.now() - startedAt,
   });

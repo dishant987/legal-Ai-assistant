@@ -5,13 +5,16 @@ import { getDb } from '../lib/db.js';
 import {
   analyses,
   findings,
+  obligations,
   type Analysis,
   type Finding,
   type NewAnalysis,
   type NewFinding,
+  type NewObligation,
+  type Obligation,
 } from './schema.js';
 
-export type AnalysisWithFindings = Analysis & { findings: Finding[] };
+export type AnalysisWithFindings = Analysis & { findings: Finding[]; obligations: Obligation[] };
 
 /**
  * Store an analysis and its findings together.
@@ -26,6 +29,7 @@ export type AnalysisWithFindings = Analysis & { findings: Finding[] };
 export async function create(
   analysis: NewAnalysis,
   rows: readonly Omit<NewFinding, 'analysisId'>[],
+  duties: readonly Omit<NewObligation, 'analysisId'>[] = [],
 ): Promise<Analysis> {
   return getDb().transaction(async (tx) => {
     const [row] = await tx.insert(analyses).values(analysis).returning();
@@ -33,6 +37,9 @@ export async function create(
 
     if (rows.length > 0) {
       await tx.insert(findings).values(rows.map((f) => ({ ...f, analysisId: row.id })));
+    }
+    if (duties.length > 0) {
+      await tx.insert(obligations).values(duties.map((o) => ({ ...o, analysisId: row.id })));
     }
     return row;
   });
@@ -51,6 +58,6 @@ export async function latestForDocument(documentId: string): Promise<AnalysisWit
   return getDb().query.analyses.findFirst({
     where: eq(analyses.documentId, documentId),
     orderBy: desc(analyses.createdAt),
-    with: { findings: true },
+    with: { findings: true, obligations: true },
   });
 }

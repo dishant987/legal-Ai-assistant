@@ -34,26 +34,26 @@ Nothing is asserted that isn't either (a) a verbatim span in your document, or (
 
 Every bullet above maps to a feature, a file, and a test.
 
-| Problem statement bullet                                    | Feature                                                                                                | Implementation                                       | Test             |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- | ---------------- |
-| Simplifying complex legal documents                         | Per-clause plain-language rewrite at Grade-8 reading level, Hindi/Marathi toggle                       | `server/src/services/analysis/stages/simplify.ts`    | _pending Step 6_ |
-| Comparing contracts, agreements, or policies                | Two-document clause-level semantic diff with a balance-of-power read on each change                    | `.../stages/compare.ts`                              | _pending Step 6_ |
-| Highlighting clauses, obligations, risks, inconsistencies   | Span-anchored findings with severity, streamed over SSE and each checked against the document          | `.../stages/extract.ts`, `.../stages/verify.ts`      | `verify.test.ts`, `pipeline.test.ts` |
-| Answering questions based on provided documents             | Grounded Q&A — answers only from the uploaded document, cites the span, or says "not in this document" | `.../stages/ask.ts`                                  | _pending Step 6_ |
-| Understanding options and potential next steps              | Options ladder (negotiate / walk away / escalate) with the actual forum for each                       | `.../stages/options.ts`                              | _pending Step 6_ |
-| Summaries, checklists, actionable outputs                   | One-page summary, pre-signing checklist, redline wording, ready-to-send negotiation message            | `.../stages/act.ts`                                  | _pending Step 6_ |
-| Preparing information or questions for a legal professional | Lawyer brief: facts timeline, documents to carry, the questions to ask, statutes in play               | `.../stages/brief.ts`                                | _pending Step 6_ |
+| Problem statement bullet | Feature | Implementation | Test |
+| --- | --- | --- | --- |
+| Simplifying complex legal documents | Every finding restated in plain English, plus a three-sentence summary of the whole document | `stages/extract.ts`, `stages/act.ts` | `pipeline.test.ts`, `followups.test.ts` |
+| Comparing contracts, agreements, or policies | Substantive diff between two versions — cosmetic edits ignored, each change labelled by who it favours, with a net balance shift | `stages/compare.ts` | `followups.test.ts` |
+| Highlighting clauses, obligations, risks, inconsistencies | Span-anchored findings by severity, and a who-owes-what-by-when table, both streamed as they are verified | `stages/extract.ts`, `stages/obligations.ts`, `stages/verify.ts` | `verify.test.ts`, `pipeline.test.ts` |
+| Answering questions based on provided documents | Answers drawn only from the uploaded document, anchored to the text they rest on — or an explicit "it does not say" | `stages/ask.ts` | `followups.test.ts` |
+| Understanding options and potential next steps | Options with upside, downside and the actual forum for each. Deliberately unranked: information, not advice | `stages/options.ts` | `followups.test.ts` |
+| Summaries, checklists, actionable outputs | Pre-signing checklist, redline wording per clause, and a message short enough to send | `stages/act.ts` | `followups.test.ts` |
+| Preparing information or questions for a legal professional | Facts in order, documents to bring, and questions drawn from this contract rather than a generic list | `stages/brief.ts` | `followups.test.ts` |
 
 ### Beyond the brief
 
 |                            |                                                                                                                                                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Span anchoring**         | Every finding carries `{quote, charStart, charEnd}`. Click one and the exact words highlight in your document.                                              |
-| **Self-audit**             | A separate verification pass strikes out any claim whose quote isn't verbatim in the source. Deterministic string containment — it cannot be talked around. |
-| **You / Market / Law**     | Each material clause is shown against market standard _and_ against the statutory floor — including clauses that are **void regardless of signature**.      |
-| **Jurisdiction honesty**   | A _model_ act is never cited as binding in a state that hasn't adopted it.                                                                                  |
+| **Self-audit**             | Any claim whose quote isn't verbatim in the source is struck through, not hidden. Deterministic string containment, not a second model — it cannot be talked around. |
+| **Statutes as data**       | Provisions ship in the repo with their own words quoted. The model may only pick an id from that file, so a fabricated citation has no route to a reader — including the clauses that are **void regardless of signature**. |
+| **Jurisdiction honesty**   | A _model_ act is never cited as binding in a state we cannot confirm has adopted it — it carries a caveat instead of a claim. |
 | **Reads a photograph**     | Stamp-paper agreements photographed on a phone go straight to the model. No OCR layer to break.                                                             |
-| **Four-provider failover** | Gemini → Groq → Mistral → Ollama, with a circuit breaker and token-budget routing. Ollama runs locally or against its hosted API, so the chain works with no keys at all. |
+| **Four-provider failover** | Gemini → Groq → Mistral → Ollama, with a circuit breaker and token-budget routing. A provider whose free-tier ceiling a request exceeds is skipped rather than sent a doomed call. |
 
 ---
 
@@ -81,9 +81,15 @@ Only `VITE_`-prefixed variables reach the browser. **No key, secret or connectio
 ever belongs in `client/.env`** — everything there is compiled into the bundle and is
 readable by anyone who opens the page. All provider credentials stay server-side.
 
-**No API keys?** It still runs. Install [Ollama](https://ollama.com) and `ollama pull llama3.2`, and the chain falls through to local inference with no credentials anywhere.
+**You need at least one provider key.** Every provider is a hosted service, so with none set the
+server starts and serves health, but each analysis fails cleanly with `ALL_PROVIDERS_FAILED`.
+Start with [Gemini](https://aistudio.google.com/apikey) — free, no card, and the only provider
+that reads PDFs and photographs. `/api/v1/health/providers` shows what is live.
 
-**Want Ollama without the laptop?** Set `OLLAMA_API_KEY` to a key from [ollama.com](https://ollama.com/settings/keys) and it switches to the hosted API automatically — a large model instead of whatever fits locally. `OLLAMA_MODEL` overrides the tag, because that catalogue changes faster than anything else here. `/api/v1/health/providers` reports which mode is live.
+Free tiers for the rest: [Groq](https://console.groq.com/keys), [Mistral](https://console.mistral.ai/api-keys),
+[Ollama](https://ollama.com/settings/keys). `OLLAMA_MODEL` overrides the model tag, because that
+catalogue changes faster than anything else here — `GET https://ollama.com/v1/models` lists what
+your key can reach.
 
 **No Postgres?** Create a free [Neon](https://neon.tech) project and paste its connection string into `DATABASE_URL`. No code changes, no Docker.
 

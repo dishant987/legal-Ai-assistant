@@ -39,6 +39,38 @@ export function describeSchema(schema: z.ZodType): string {
   return JSON.stringify(z.toJSONSchema(schema), null, 2);
 }
 
+/**
+ * Assemble a stage prompt.
+ *
+ * Every stage has the same skeleton — instruction, standing rules, the schema,
+ * then the fenced document — and writing it out seven times would be seven
+ * chances to forget the fence.
+ *
+ * @param intro - What this stage is asking for.
+ * @param schema - The shape the answer must take.
+ * @param document - Untrusted document text, fenced by this function.
+ * @param extra - Optional lines between the instruction and the rules.
+ * @returns The full prompt.
+ */
+export function stagePrompt(
+  intro: string[],
+  schema: z.ZodType,
+  document: string,
+  extra: string[] = [],
+): string {
+  return [
+    ...intro,
+    ...(extra.length > 0 ? ['', ...extra] : []),
+    '',
+    RULES,
+    '',
+    'Return JSON matching this schema:',
+    describeSchema(schema),
+    '',
+    fenceDocument(document),
+  ].join('\n');
+}
+
 /** The standing rules every stage prompt repeats. */
 export const RULES = [
   'Rules:',

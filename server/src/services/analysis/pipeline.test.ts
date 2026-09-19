@@ -41,6 +41,7 @@ function scriptedRouter(
 const defaultScript = {
   ingest: { text: DOC, docType: 'rent-agreement', parties: ['landlord', 'tenant'] },
   statute: { selections: [] },
+  obligations: { obligations: [] },
   extract: {
     findings: [
       {
@@ -76,8 +77,11 @@ describe('analyse — event stream', () => {
       'extract:done',
       'verify:running',
       'verify:done',
+      // Started together, because neither depends on the other (R9.3).
       'statute:running',
+      'obligations:running',
       'statute:done',
+      'obligations:done',
     ]);
   });
 
@@ -164,6 +168,7 @@ describe('analyse — prompt injection (R8.8)', () => {
         {
           ingest: { text: HOSTILE, docType: 'rent-agreement', parties: [] },
           statute: { selections: [] },
+          obligations: { obligations: [] },
           extract: {
             findings: [
               {
@@ -192,6 +197,7 @@ describe('analyse — prompt injection (R8.8)', () => {
       {
         ingest: { text: HOSTILE, docType: 'rent-agreement', parties: [] },
         statute: { selections: [] },
+        obligations: { obligations: [] },
         extract: {
           findings: [
             {
@@ -304,6 +310,7 @@ describe('analyse — statutes (F10, F11, F12)', () => {
     ingest: { text: NONCOMPETE, docType: 'employment-offer', parties: ['employer', 'employee'] },
     extract: { findings: [] },
     statute: { selections },
+    obligations: { obligations: [] },
   });
 
   async function runOffer(
@@ -409,6 +416,7 @@ describe('analyse — jurisdiction honesty (F11)', () => {
         ingest: { text: RENT, docType: 'rent-agreement', parties: ['landlord', 'tenant'] },
         extract: { findings: [] },
         statute: { selections: [] },
+        obligations: { obligations: [] },
       }),
     );
 

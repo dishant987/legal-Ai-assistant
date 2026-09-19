@@ -27,9 +27,10 @@ let calls = 0;
 const router: Router = {
   complete: (req) => {
     calls += 1;
-    if (req.stage === 'statute') {
+    if (req.stage === 'statute' || req.stage === 'obligations') {
+      const empty = req.stage === 'statute' ? { selections: [] } : { obligations: [] };
       return Promise.resolve({
-        data: req.schema.parse({ selections: [] }),
+        data: req.schema.parse(empty),
         provider: 'gemini' as const,
         degraded: false,
       });
