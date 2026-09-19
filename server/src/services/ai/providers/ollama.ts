@@ -1,37 +1,34 @@
 import { Ollama } from 'ollama';
 
 import { parseJsonResponse } from '../json.js';
+import { MODELS, OLLAMA_HOST } from '../models.js';
 import type { Provider, RawRequest } from '../types.js';
 
-import { resolveOllama, type OllamaConfig, type OllamaEnv } from './ollamaConfig.js';
-
 /**
- * Ollama, local or hosted.
+ * Ollama's hosted API.
  *
- * Always in the chain, because local Ollama needs no key at all — that is what
- * lets the app run with zero credentials and survive a dead network.
+ * Cloud only — there is no local daemon mode. That makes Ollama symmetric with
+ * the other three: an API key puts it in the chain, and its absence leaves it
+ * out. It sits last because it is the deepest fallback, not because it is
+ * weakest; the hosted models are large.
  *
- * With OLLAMA_API_KEY set it talks to Ollama's hosted API instead, which is a
- * different proposition: a large model rather than whatever fits on the
- * laptop. The two share an id because they are the same provider from the
- * router's point of view; `mode` is what the health endpoint reports so the UI
- * can tell an honest story about which one answered.
- *
- * @param env - Ollama-related environment values.
- * @returns A provider adapter, plus the resolved configuration.
+ * @param apiKey - Ollama API key, from ollama.com/settings/keys.
+ * @param model - Optional tag override. Defaults to the shared model table.
+ * @returns A provider adapter.
  */
-export function createOllamaProvider(env: OllamaEnv): Provider & { config: OllamaConfig } {
-  const config = resolveOllama(env);
-  const client = new Ollama({ host: config.host, headers: config.headers });
+export function createOllamaProvider(apiKey: string, model?: string): Provider {
+  const client = new Ollama({
+    host: OLLAMA_HOST,
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
 
   return {
     id: 'ollama',
     supportsFiles: false,
-    config,
 
     async complete(req: RawRequest): Promise<unknown> {
       const response = await client.chat({
-        model: config.model,
+        model: model ?? MODELS.ollama,
         messages: [{ role: 'user', content: req.prompt }],
         format: 'json',
         options: { temperature: req.temperature },

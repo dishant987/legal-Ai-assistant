@@ -57,12 +57,6 @@ export default defineConfig({
          */
         'src/services/ai/router.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
         'src/services/ai/json.ts': { lines: 100, functions: 100, branches: 100, statements: 100 },
-        'src/services/ai/providers/ollamaConfig.ts': {
-          lines: 100,
-          functions: 100,
-          branches: 100,
-          statements: 100,
-        },
       },
     },
   },

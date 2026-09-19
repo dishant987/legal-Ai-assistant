@@ -186,7 +186,10 @@ export function createRouter(options: RouterOptions): Router {
             provider: id,
             outcome,
             latencyMs: now() - started,
-            reason: error instanceof Error ? error.name : 'unknown',
+            // Name AND message: a provider that rejects an unknown model with
+            // 401 is indistinguishable from a bad key without it. Logged only,
+            // never serialised to a client.
+            reason: error instanceof Error ? `${error.name}: ${error.message}`.slice(0, 200) : 'unknown',
           });
           break; // not a parse problem — retrying the same provider would not help
         }

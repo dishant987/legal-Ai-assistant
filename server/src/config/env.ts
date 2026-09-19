@@ -22,9 +22,10 @@ function blankAsAbsent<T extends z.ZodType>(inner: T): z.ZodOptional<T> {
  * Environment schema. Parsed exactly once, at boot.
  *
  * Two deliberate choices:
- *  - Every AI provider key is optional. A missing key means that provider is
- *    simply absent from the failover chain (R2.8) — never a crash. The app must
- *    run with zero keys set.
+ *  - Every AI provider key is optional, so a missing one drops that provider
+ *    from the failover chain rather than crashing the process (R2.8). The
+ *    server still starts with none set; analyses then fail cleanly with
+ *    ALL_PROVIDERS_FAILED, because every provider is now a hosted service.
  *  - Malformed config fails loudly at startup rather than at request time, so a
  *    typo surfaces in one second instead of during a demo.
  */
@@ -50,11 +51,6 @@ const EnvSchema = z.object({
   GEMINI_API_KEY: blankAsAbsent(z.string().min(1)),
   GROQ_API_KEY: blankAsAbsent(z.string().min(1)),
   MISTRAL_API_KEY: blankAsAbsent(z.string().min(1)),
-  OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
-  /**
-   * Set this and Ollama switches from the local daemon to the hosted API.
-   * Absent means local, which still needs no key at all.
-   */
   OLLAMA_API_KEY: blankAsAbsent(z.string().min(1)),
   /** Override the model tag. Ollama's catalogue churns; this saves a redeploy. */
   OLLAMA_MODEL: blankAsAbsent(z.string().min(1)),

@@ -56,22 +56,20 @@ describe('POST /api/v1/analyses — transport', () => {
   });
 
   it('delivers failures as an error event, since the status line is long gone', async () => {
-    // No cloud keys are configured in tests, so the chain falls through to a
-    // local Ollama that is not running. The stream must still close cleanly
-    // with a coded, translated, traceable error rather than a dead socket.
+    // Tests run with no provider keys, so the chain is empty and there is
+    // nothing to call. The stream must still close cleanly with a coded,
+    // translated, traceable error rather than a dead socket.
     const res = await request(app).post('/api/v1/analyses').send({ text: CONTRACT });
     const last = parseEvents(res.text).at(-1);
 
-    if (last?.event === 'error') {
-      const data = last.data as { code: string; message: string; requestId: string; retryable: boolean };
-      expect(data.code).toBe('ALL_PROVIDERS_FAILED');
-      expect(data.retryable).toBe(true);
-      expect(data.requestId).toBeTruthy();
-      expect(data.message).not.toMatch(/ECONNREFUSED|localhost|11434/);
-    } else {
-      // An Ollama instance is running locally — then it must have finished.
-      expect(last?.event).toBe('done');
-    }
+    expect(last?.event).toBe('error');
+    const data = last?.data as { code: string; message: string; requestId: string; retryable: boolean };
+
+    expect(data.code).toBe('ALL_PROVIDERS_FAILED');
+    expect(data.retryable).toBe(true);
+    expect(data.requestId).toBeTruthy();
+    // The human sentence, not a transport failure from some provider's SDK.
+    expect(data.message).not.toMatch(/ECONNREFUSED|ENOTFOUND|fetch failed|ollama\.com/i);
   });
 });
 

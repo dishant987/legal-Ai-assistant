@@ -14,14 +14,16 @@ describe('parseEnv', () => {
     const env = parseEnv(valid);
     expect(env.PORT).toBe(3001);
     expect(env.LOG_LEVEL).toBe('info');
-    expect(env.OLLAMA_BASE_URL).toBe('http://localhost:11434');
   });
 
-  it('runs with zero AI provider keys — every provider is optional (R2.8)', () => {
+  it('starts with zero AI provider keys — every provider is optional (R2.8)', () => {
+    // The process boots; analyses then fail with ALL_PROVIDERS_FAILED, since
+    // every provider is a hosted service and there is nothing to call.
     const env = parseEnv(valid);
     expect(env.GEMINI_API_KEY).toBeUndefined();
     expect(env.GROQ_API_KEY).toBeUndefined();
     expect(env.MISTRAL_API_KEY).toBeUndefined();
+    expect(env.OLLAMA_API_KEY).toBeUndefined();
   });
 
   it('coerces PORT from a string', () => {
@@ -75,7 +77,6 @@ describe('parseEnv', () => {
       GEMINI_API_KEY: '',
       GROQ_API_KEY: '',
       MISTRAL_API_KEY: '',
-      OLLAMA_BASE_URL: 'http://localhost:11434',
       CLOUDINARY_CLOUD_NAME: '',
       CLOUDINARY_API_KEY: '',
       CLOUDINARY_API_SECRET: '',
