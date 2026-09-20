@@ -7,6 +7,7 @@ import type { VerifiedFinding } from '../../types/finding.js';
 import { getRouter } from '../ai/index.js';
 import type { Router } from '../ai/router.js';
 import type { FileRef } from '../ai/types.js';
+import { store as storeDocument } from '../storage/cloudinary.service.js';
 
 import { extract } from './stages/extract.js';
 import { classify, ingestFile } from './stages/ingest.js';
@@ -138,12 +139,20 @@ export async function analyse(input: AnalyseInput, emit: Emit, router: Router = 
       : await classify(router, input.text ?? '');
   emit({ type: 'stage', stage: 'ingest', status: 'done' });
 
+  // Best-effort and deliberately before the row is written, so the id can go
+  // in with it. A failure here returns undefined and the analysis carries on.
+  const assetId =
+    input.store && input.file !== undefined
+      ? await storeDocument(input.file.bytes, input.file.mimeType)
+      : undefined;
+
   const document = input.store
     ? await documentModel.create({
         contentHash: hash,
         text: ingested.text,
         docType: ingested.docType,
         stored: true,
+        ...(assetId !== undefined ? { cloudinaryPublicId: assetId } : {}),
         ...(input.jurisdictionState !== undefined ? { jurisdictionState: input.jurisdictionState } : {}),
       })
     : undefined;

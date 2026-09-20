@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  // The main tsconfig includes tests so ESLint's project service can see them.
+  // The shipped build should not carry them.
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"]
+}

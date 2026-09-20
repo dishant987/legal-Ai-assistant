@@ -97,7 +97,46 @@ your key can reach.
 
 ## Stack
 
-PostgreSQL (Drizzle ORM) · Express 5 · React 19 · TypeScript strict · TanStack Query/Table/Virtual · Axios · Tailwind + shadcn/ui · Vitest + Playwright + axe-core
+PostgreSQL (Drizzle ORM) · Express 5 · React 19 · TypeScript strict · TanStack Query · Axios ·
+Tailwind 4 · Vitest · Cloudinary
+
+No component library. Radix would have bought focus traps and ARIA for dialogs, and there
+are none yet — the markup here is a handful of native elements that already behave
+correctly. Worth revisiting the moment a modal appears.
+
+## Deployment
+
+Client on Vercel, API on Render, database on Neon. Config for both is committed —
+`vercel.json` and `render.yaml` — so neither needs clicking through a dashboard to
+reproduce. Nothing here contains a secret.
+
+**Deploy the API first.** The client needs its URL, and the API needs the client's
+origin, so one of them has to go first and it may as well be the one that can be
+tested on its own.
+
+1. **Database** — create a free [Neon](https://neon.tech) project. Keep both connection
+   strings: the **pooled** one (`…-pooler…`) for `DATABASE_URL`, and the **direct** one
+   for `DIRECT_DATABASE_URL`. Migrations fail through the pooler. Render's own free
+   Postgres expires after 30 days, which is why this points elsewhere.
+
+2. **API on Render** — new Blueprint from this repo; it reads `render.yaml`. Set the
+   values marked `sync: false`, including at least one provider key. Migrations run as
+   part of the build, because `preDeployCommand` needs a paid plan.
+
+3. **Client on Vercel** — import the repo and **leave Root Directory empty**. The client
+   compiles `server/src/types` through the `@api` alias, so pointing Vercel at `client/`
+   can cut the server folder out of the build context and the build then fails on an
+   unresolved import. Set `VITE_API_URL` to `https://<your-render-service>.onrender.com/api/v1`.
+
+4. **Close the loop** — set `CORS_ORIGIN` on Render to the exact Vercel origin
+   (`https://your-app.vercel.app`, no trailing slash, no wildcard) and redeploy.
+
+Two things about the free tiers, so neither is a surprise on the day: **Render sleeps
+after about 15 minutes idle** and takes roughly 30 seconds to wake, and **Neon suspends
+after about 5 minutes** and costs about a second on the first query. Hit
+`/api/v1/health/ready` a few minutes before you need it and both will be warm.
+
+---
 
 ## Project structure
 

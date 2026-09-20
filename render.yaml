@@ -1,0 +1,69 @@
+# Render blueprint for the API.
+#
+# Render reads this from the repository root, so `rootDir` points it at the
+# server project. The client is not deployed here — it goes to Vercel, see
+# vercel.json.
+#
+# Nothing in this file is a secret. Every value marked `sync: false` is set in
+# the Render dashboard and never committed.
+
+services:
+  - type: web
+    name: legal-assist-api
+    runtime: node
+    rootDir: server
+    plan: free
+    region: singapore # closest to the users this is built for
+
+    # Migrations run here rather than in preDeployCommand, which needs a paid
+    # plan. They are idempotent, so a redeploy with no schema change is a no-op.
+    buildCommand: npm ci && npm run build && npm run db:migrate
+    startCommand: node dist/server.js
+
+    # Render polls this and will not route traffic until it answers. It
+    # deliberately touches nothing else, so a database blip does not cause a
+    # restart loop — readiness is the endpoint that checks dependencies.
+    healthCheckPath: /api/v1/health
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+
+      # Render injects PORT. The app reads it; do not set it here.
+
+      # Neon, pooled endpoint. Free-tier Postgres on Render expires after 30
+      # days, which is why this points elsewhere.
+      - key: DATABASE_URL
+        sync: false
+      # Neon, DIRECT (unpooled) endpoint. Migrations fail through the pooler.
+      - key: DIRECT_DATABASE_URL
+        sync: false
+
+      # The deployed Vercel origin, exactly. A wildcard here would undo the
+      # allowlist entirely.
+      - key: CORS_ORIGIN
+        sync: false
+
+      # At least one is needed or every analysis fails with
+      # ALL_PROVIDERS_FAILED. Gemini first: it alone reads PDFs and photographs.
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: OLLAMA_MODEL
+        sync: false
+
+      # Optional. Without these, documents are analysed in memory and never
+      # stored, which is the safer default anyway.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false

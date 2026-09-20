@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { getEnv } from './config/env.js';
 import { closeDb } from './lib/db.js';
 import { logger } from './lib/logger.js';
+import { startRetentionSweep } from './services/retention.service.js';
 
 // Parse configuration before anything else, so a bad value fails here — loudly,
 // in one second — instead of surfacing mid-request during a demo.
@@ -10,6 +11,9 @@ const env = getEnv();
 const server = createApp().listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'server listening');
 });
+
+// Documents are deleted after a day whether or not anyone asks (PRIVACY.md).
+const stopRetentionSweep = startRetentionSweep();
 
 /**
  * Drain rather than drop.
@@ -20,6 +24,7 @@ const server = createApp().listen(env.PORT, () => {
  */
 async function shutdown(signal: string): Promise<void> {
   logger.info({ signal }, 'shutting down');
+  stopRetentionSweep();
   server.close();
   await closeDb();
   process.exit(0);
