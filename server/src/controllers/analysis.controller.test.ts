@@ -73,6 +73,39 @@ describe('POST /api/v1/analyses — transport', () => {
   });
 });
 
+describe('POST /api/v1/analyses — multipart, the way a browser actually sends it', () => {
+  /**
+   * This is the shape the UI uses, and it is not interchangeable with JSON.
+   *
+   * The first version watched `req` for 'close' to detect a reader leaving.
+   * With a multipart body that event fires the moment multer finishes reading
+   * it — long before the analysis runs — so every event was suppressed and the
+   * endpoint returned a valid 200 event-stream containing nothing at all. The
+   * JSON tests passed throughout.
+   */
+  it('streams events for a multipart body, not an empty 200', async () => {
+    const res = await request(app).post('/api/v1/analyses').field('text', CONTRACT).field('store', 'false');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/event-stream');
+    expect(res.text.length).toBeGreaterThan(0);
+
+    const events = parseEvents(res.text);
+    expect(events.length).toBeGreaterThan(0);
+    expect(events[0]?.event).toBe('stage');
+  });
+
+  it('accepts an uploaded file the same way', async () => {
+    const res = await request(app)
+      .post('/api/v1/analyses')
+      .attach('file', Buffer.from(CONTRACT), { filename: 'lease.txt', contentType: 'text/plain' })
+      .field('store', 'false');
+
+    expect(res.status).toBe(200);
+    expect(res.text.length).toBeGreaterThan(0);
+  });
+});
+
 describe('POST /api/v1/analyses — input validation', () => {
   it('rejects a request with neither a file nor text', async () => {
     const res = await request(app).post('/api/v1/analyses').send({});

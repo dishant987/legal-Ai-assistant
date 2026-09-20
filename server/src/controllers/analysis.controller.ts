@@ -64,11 +64,19 @@ export const analyseDocument: RequestHandler = async (req: Request, res: Respons
   res.flushHeaders();
 
   // If the reader navigates away mid-analysis, stop writing into a dead socket.
+  //
+  // Watch the RESPONSE, not the request. `req` emits 'close' as soon as its
+  // body has been consumed, which for a multipart upload is the moment multer
+  // finishes — long before the analysis runs. Listening there suppressed every
+  // event and produced a 200 with an empty body, which no unit test caught
+  // because supertest and a browser upload consume the body differently.
+  //
   // Held in an object, not a `let`: TypeScript narrows a boolean local to
-  // always-true because it cannot see the close handler mutate it later.
+  // always-true because it cannot see the handler mutate it later.
   const stream = { open: true };
-  req.on('close', () => {
-    stream.open = false;
+  res.on('close', () => {
+    // A finished response also closes. Only an unfinished one means they left.
+    if (!res.writableFinished) stream.open = false;
   });
 
   try {
